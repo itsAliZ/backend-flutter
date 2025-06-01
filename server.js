@@ -33,19 +33,23 @@ app.get("/", async (req, res) => {
   res.send("welcome to home page");
 });
 app.post("/register", async (req, res) => {
-  console.log("hi register");
-
-  console.log("Received registration request:", req.body);
-
   const name = JSON.parse(req.body.name);
-  const query = "INSERT INTO [user] (name) OUTPUT INSERTED.id VALUES (@name)";
+  console.log("Received name:", name);
+  if (!name) {
+    return res.status(400).json({ error: "Name is required" });
+  }
+
+  const query =
+    "INSERT INTO [user] (username) OUTPUT INSERTED.id VALUES (@name)";
   try {
     const pool = await sql.connect(dbConfig);
     const result = await pool
       .request()
-      .input("name", sql.VarChar, name)
+      .input("username", sql.VarChar, name)
       .query(query);
-    res.json({
+    console.log("DB response : " + result);
+
+    res.status(200).json({
       message: "User registered successfully.",
       userId: result.recordset[0].id,
     });
