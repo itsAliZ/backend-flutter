@@ -8,7 +8,7 @@ app.use(express.json());
 
 // SQL Server connection configuration
 const dbConfig = {
-  server: "localhost",
+  server: process.env.host || "localhost",
   database: "BookStore",
   user: "bookstore_user", // اضافه کن این خط
   password: "A12344321@", // اضافه کن این خط
@@ -112,7 +112,7 @@ app.get("/books/all", async (req, res) => {
 });
 
 // Start the server
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Server is running on localhost:${PORT}`);
 });
