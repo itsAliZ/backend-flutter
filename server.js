@@ -32,29 +32,47 @@ app.get("/", async (req, res) => {
   console.log("hi");
   res.send("welcome to home page");
 });
+
 app.post("/register", async (req, res) => {
-  const name = JSON.parse(req.body.name);
-  console.log("Received name:", name);
-  if (!name) {
-    return res.status(400).json({ error: "Name is required" });
+  const { username, password } = req.body;
+  console.log("Register request received:", req.body);
+
+  // اعتبارسنجی اولیه
+  if (!username) {
+    return res
+      .status(400)
+      .json({ error: "Username and password are required" });
   }
 
-  const query =
-    "INSERT INTO [user] (username) OUTPUT INSERTED.id VALUES (@name)";
   try {
     const pool = await sql.connect(dbConfig);
-    const result = await pool
-      .request()
-      .input("username", sql.VarChar, name)
-      .query(query);
-    console.log("DB response : " + result);
 
-    res.status(200).json({
+    // بررسی اینکه username تکراری نباشه
+    const checkUser = await pool
+      .request()
+      .input("username", sql.VarChar, username)
+      .query("SELECT id FROM [user] WHERE username = @username");
+
+    if (checkUser.recordset.length > 0) {
+      return res.status(409).json({ error: "Username already exists" });
+    }
+
+    // ذخیره در دیتابیس
+    const insertUser = await pool
+      .request()
+      .input("username", sql.VarChar, username)
+      // .input("password", sql.VarChar, hashedPassword)
+      .query(
+        "INSERT INTO [user] (username) OUTPUT INSERTED.id VALUES (@username)"
+      );
+
+    res.status(201).json({
       message: "User registered successfully.",
-      userId: result.recordset[0].id,
+      userId: insertUser.recordset[0].id,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Register error:", err);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
